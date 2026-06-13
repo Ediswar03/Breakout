@@ -416,16 +416,16 @@ app.layout = html.Div([
             
             html.Div([
                 html.Label("Tanggal Mulai", className="control-label"),
-                dcc.DatePickerSingle(id="date-start", date="2022-01-01",
-                                     display_format="YYYY-MM-DD",
-                                     style={"width":"100%"})
+                dcc.Input(id="date-start", type="text", value="2022-01-01",
+                          style={"width":"100%","padding":"3px 6px","borderRadius":"3px",
+                                 "border":"1px solid #d0d0d0","fontSize":"11px","fontFamily":"inherit"})
             ], className="control-group"),
             
             html.Div([
                 html.Label("Tanggal Akhir", className="control-label"),
-                dcc.DatePickerSingle(id="date-end", date="2024-06-01",
-                                     display_format="YYYY-MM-DD",
-                                     style={"width":"100%"})
+                dcc.Input(id="date-end", type="text", value="2024-06-01",
+                          style={"width":"100%","padding":"3px 6px","borderRadius":"3px",
+                                 "border":"1px solid #d0d0d0","fontSize":"11px","fontFamily":"inherit"})
             ], className="control-group"),
             
             html.Div([
@@ -517,8 +517,8 @@ def update_upload_filename(filename):
      State('custom-ticker-input', 'value'),
      State('upload-csv', 'contents'),
      State('upload-csv', 'filename'),
-     State('date-start', 'date'),
-     State('date-end', 'date'),
+     State('date-start', 'value'),
+     State('date-end', 'value'),
      State('window-slider', 'value'),
      State('vol-factor-slider', 'value'),
      State('forward-window-slider', 'value'),
