@@ -3,6 +3,7 @@ import io
 import datetime
 import base64
 import functools
+import time
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
@@ -183,17 +184,19 @@ def load_yfinance_data(ticker, start, end):
     if cache_key in _yf_cache:
         return _yf_cache[cache_key].copy()
         
-    try:
-        raw_df = yf.download(ticker, start=start, end=end)
-        if len(raw_df) > 10:
-            if isinstance(raw_df.columns, pd.MultiIndex):
-                raw_df.columns = raw_df.columns.get_level_values(0)
-            _yf_cache[cache_key] = raw_df.copy()
-            return raw_df
-        return None
-    except Exception as e:
-        print(f"yfinance error untuk {ticker}: {e}")
-        return None
+    for attempt in range(2):
+        try:
+            raw_df = yf.download(ticker, start=start, end=end)
+            if len(raw_df) > 10:
+                if isinstance(raw_df.columns, pd.MultiIndex):
+                    raw_df.columns = raw_df.columns.get_level_values(0)
+                _yf_cache[cache_key] = raw_df.copy()
+                return raw_df
+        except Exception as e:
+            print(f"yfinance error untuk {ticker}: {e}")
+        time.sleep(1)
+        
+    return None
 
 
 def generate_synthetic_data(days=600):
@@ -363,7 +366,12 @@ app.layout = html.Div([
     html.Div([
         # SIDEBAR
         html.Div([
-            html.Div("Pengaturan", className="sidebar-title"),
+            html.Div([
+                html.Div("🚀 Breakout", style={"fontSize":"24px", "fontWeight":"800", "background":"linear-gradient(135deg, #38bdf8, #818cf8)", "-webkit-background-clip":"text", "-webkit-text-fill-color":"transparent"}),
+                html.Div("Pro", style={"fontSize":"24px", "fontWeight":"300", "color":"var(--text-primary)"})
+            ], style={"display":"flex", "gap":"6px", "marginBottom":"25px", "alignItems":"center", "borderBottom":"1px solid rgba(255,255,255,0.05)", "paddingBottom":"20px"}),
+            
+            html.Div("⚙️ PENGATURAN DATA", className="sidebar-title"),
             
             html.Div([
                 html.Label("Pilih Sumber Data", className="control-label"),
@@ -438,7 +446,7 @@ app.layout = html.Div([
             html.Button("Proses", id="btn-proses", className="btn-proses", n_clicks=0),
             
             # Parameter Algoritma
-            html.Div("Parameter Algoritma", className="sidebar-title"),
+            html.Div("🔬 PARAMETER ALGORITMA", className="sidebar-title"),
             html.Div([
                 html.Label("Rolling Window Resistensi", className="control-label"),
                 dcc.Slider(id="window-slider", min=5, max=40, step=1, value=20, marks={5:"5", 20:"20", 40:"40"})
@@ -449,7 +457,7 @@ app.layout = html.Div([
                 dcc.Slider(id="vol-factor-slider", min=1.0, max=3.0, step=0.1, value=1.5, marks={1.0:"1.0", 1.5:"1.5", 3.0:"3.0"})
             ], className="control-group"),
             
-            html.Div("Parameter Evaluasi ML", className="sidebar-title"),
+            html.Div("🎯 EVALUASI ML (TAKE PROFIT / STOP LOSS)", className="sidebar-title", style={"marginTop": "25px"}),
             html.Div([
                 html.Label("Horizon Evaluasi (Hari)", className="control-label"),
                 dcc.Slider(id="forward-window-slider", min=3, max=10, step=1, value=5, marks={3:"3", 5:"5", 10:"10"})
@@ -466,15 +474,15 @@ app.layout = html.Div([
             ], className="control-group"),
             
             # Informasi Saham
-            html.Div("Informasi Saham", className="sidebar-title"),
+            html.Div("📈 INFORMASI SAHAM", className="sidebar-title", style={"marginTop": "25px"}),
             html.Div(id="sidebar-stock-info", className="legend-box"),
             
             # Hasil Deteksi
-            html.Div("Hasil Deteksi", className="sidebar-title"),
+            html.Div("⚡ HASIL DETEKSI", className="sidebar-title", style={"marginTop": "25px"}),
             html.Div(id="sidebar-detection-results", className="legend-box"),
             
             # Keterangan Legend
-            html.Div("Keterangan", className="sidebar-title"),
+            html.Div("🏷️ KETERANGAN GRAFIK", className="sidebar-title", style={"marginTop": "25px"}),
             html.Div([
                 html.Div([
                     html.Span("━", style={"color":"#38bdf8", "fontWeight":"bold", "marginRight":"8px"}),
