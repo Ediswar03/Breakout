@@ -355,7 +355,7 @@ def parse_contents(contents, filename):
 
 
 # INITIALIZE DASH APP
-app = dash.Dash(__name__, title="Deteksi Pola Breakout Saham Hybrid")
+app = dash.Dash(__name__, title="Deteksi Pola Breakout Saham")
 
 app.layout = html.Div([
     dcc.Store(id='store-processed-data'),
@@ -364,26 +364,9 @@ app.layout = html.Div([
     dcc.Download(id='download-pdf'),
     
     html.Div([
-        # SIDEBAR
         html.Div([
-            html.Div("PENGATURAN", className="sidebar-title"),
+            html.Div("PENGATURAN", className="sidebar-title", style={"marginTop":"0"}),
             
-            html.Div([
-                html.Label("Pilih Sumber Data", className="control-label"),
-                dcc.Dropdown(
-                    id="source-type",
-                    options=[
-                        {"label": "Yahoo Finance (Unduh)", "value": "Yahoo Finance (Unduh)"},
-                        {"label": "Unggah Berkas CSV", "value": "Unggah Berkas CSV"},
-                        {"label": "Simulasi Data Buatan", "value": "Simulasi Data Buatan"}
-                    ],
-                    value="Yahoo Finance (Unduh)",
-                    clearable=False,
-                    className="dash-dropdown"
-                )
-            ], className="control-group"),
-            
-            # Stock dropdown selector
             html.Div([
                 html.Label("Pilih Saham", className="control-label"),
                 dcc.Dropdown(
@@ -407,119 +390,90 @@ app.layout = html.Div([
                 )
             ], id="stock-selector-container", className="control-group"),
             
-            # Custom Ticker Manual Input
             html.Div([
-                html.Label("Ketik Ticker Saham (Yahoo Finance)", className="control-label"),
-                dcc.Input(id="custom-ticker-input", type="text", value="AAPL", style={"width":"100%", "padding":"8px", "boxSizing":"border-box", "borderRadius":"8px", "border":"1px solid var(--border-color)", "backgroundColor":"var(--bg-card)", "color":"var(--text-primary)"})
+                html.Label("Ticker Saham", className="control-label"),
+                dcc.Input(id="custom-ticker-input", type="text", value="AAPL",
+                          style={"width":"100%","padding":"4px 6px","borderRadius":"3px",
+                                 "border":"1px solid #d0d0d0","fontSize":"12px"})
             ], id="custom-ticker-manual-container", className="control-group"),
             
-            # CSV Upload
             html.Div([
-                html.Label("Unggah File CSV Saham", className="control-label"),
-                dcc.Upload(
-                    id="upload-csv",
-                    children=html.Div(["Seret & Lepas atau Klik untuk Unggah"]),
-                    className="upload-container",
-                    multiple=False
-                ),
-                html.Div(id="upload-filename-status", style={"fontSize":"11px", "color":"var(--accent-blue)", "marginTop":"4px"})
+                html.Label("Unggah File CSV", className="control-label"),
+                dcc.Upload(id="upload-csv", children=html.Div(["Klik untuk Unggah"]),
+                           className="upload-container", multiple=False),
+                html.Div(id="upload-filename-status",
+                         style={"fontSize":"10px","color":"#0066cc","marginTop":"2px"})
             ], id="upload-csv-container", className="control-group"),
             
-            # Date range selector
+            dcc.Dropdown(id="source-type",
+                options=[
+                    {"label": "Yahoo Finance (Unduh)", "value": "Yahoo Finance (Unduh)"},
+                    {"label": "Unggah Berkas CSV", "value": "Unggah Berkas CSV"},
+                    {"label": "Simulasi Data Buatan", "value": "Simulasi Data Buatan"}
+                ],
+                value="Yahoo Finance (Unduh)", clearable=False,
+                style={"display":"none"}),
+            
             html.Div([
-                html.Label("Rentang Tanggal", className="control-label"),
-                dcc.DatePickerRange(
-                    id="date-picker",
-                    start_date="2022-01-01",
-                    end_date="2024-06-01",
-                    display_format="DD-MM-YYYY",
-                    className="date-picker-range"
-                )
+                html.Label("Tanggal Mulai", className="control-label"),
+                dcc.DatePickerSingle(id="date-start", date="2022-01-01",
+                                     display_format="YYYY-MM-DD",
+                                     style={"width":"100%"})
             ], className="control-group"),
             
-            # Proses Button
+            html.Div([
+                html.Label("Tanggal Akhir", className="control-label"),
+                dcc.DatePickerSingle(id="date-end", date="2024-06-01",
+                                     display_format="YYYY-MM-DD",
+                                     style={"width":"100%"})
+            ], className="control-group"),
+            
+            html.Div([
+                dcc.Slider(id="window-slider", min=5, max=40, step=1, value=20, marks={}),
+                dcc.Slider(id="vol-factor-slider", min=1.0, max=3.0, step=0.1, value=1.5, marks={}),
+                dcc.Slider(id="forward-window-slider", min=3, max=10, step=1, value=5, marks={}),
+                dcc.Slider(id="tp-pct-slider", min=1.0, max=10.0, step=0.5, value=3.0, marks={}),
+                dcc.Slider(id="max-depth-slider", min=3, max=10, step=1, value=5, marks={}),
+                dcc.DatePickerRange(id="date-picker", start_date="2022-01-01", end_date="2024-06-01"),
+            ], style={"display":"none"}),
+            
             html.Button("Proses", id="btn-proses", className="btn-proses", n_clicks=0),
             
-            # Parameter Algoritma (Disembunyikan agar sesuai gambar)
+            html.Div("INFORMASI SAHAM", className="sidebar-title"),
+            html.Div(id="sidebar-stock-info"),
+            
+            html.Div("HASIL DETEKSI", className="sidebar-title"),
+            html.Div(id="sidebar-detection-results"),
+            
+            html.Div("KETERANGAN", className="sidebar-title"),
             html.Div([
-                html.Div("🔬 PARAMETER ALGORITMA", className="sidebar-title"),
-                html.Div([
-                html.Label("Rolling Window Resistensi", className="control-label"),
-                dcc.Slider(id="window-slider", min=5, max=40, step=1, value=20, marks={5:"5", 20:"20", 40:"40"})
-            ], className="control-group"),
-            
-            html.Div([
-                html.Label("Faktor Pengali Volume", className="control-label"),
-                dcc.Slider(id="vol-factor-slider", min=1.0, max=3.0, step=0.1, value=1.5, marks={1.0:"1.0", 1.5:"1.5", 3.0:"3.0"})
-            ], className="control-group"),
-            
-            html.Div("🎯 EVALUASI ML (TAKE PROFIT / STOP LOSS)", className="sidebar-title", style={"marginTop": "25px"}),
-            html.Div([
-                html.Label("Horizon Evaluasi (Hari)", className="control-label"),
-                dcc.Slider(id="forward-window-slider", min=3, max=10, step=1, value=5, marks={3:"3", 5:"5", 10:"10"})
-            ], className="control-group"),
-            
-            html.Div([
-                html.Label("Take Profit (%)", className="control-label"),
-                dcc.Slider(id="tp-pct-slider", min=1.0, max=10.0, step=0.5, value=3.0, marks={1.0:"1%", 3.0:"3%", 10.0:"10%"})
-            ], className="control-group"),
-            
-            html.Div([
-                html.Label("Max Depth Pohon", className="control-label"),
-                dcc.Slider(id="max-depth-slider", min=3, max=10, step=1, value=5, marks={3:"3", 5:"5", 10:"10"})
-            ], className="control-group"),
-            ], style={"display": "none"}),
-            
-            # Informasi Saham
-            html.Div("INFORMASI SAHAM", className="sidebar-title", style={"marginTop": "25px"}),
-            html.Div(id="sidebar-stock-info", className="legend-box"),
-            
-            # Hasil Deteksi
-            html.Div("HASIL DETEKSI", className="sidebar-title", style={"marginTop": "25px"}),
-            html.Div(id="sidebar-detection-results", className="legend-box"),
-            
-            # Keterangan Legend
-            html.Div("KETERANGAN", className="sidebar-title", style={"marginTop": "25px"}),
-            html.Div([
-                html.Div([
-                    html.Span("━", style={"color":"#38bdf8", "fontWeight":"bold", "marginRight":"8px"}),
-                    "Harga Close"
-                ]),
-                html.Div([
-                    html.Span("---", style={"color":"#fb923c", "fontWeight":"bold", "marginRight":"8px"}),
-                    "Resistensi (Rolling High)"
-                ]),
-                html.Div([
-                    html.Span("▲", style={"color":"#10b981", "fontWeight":"bold", "marginRight":"8px"}),
-                    "True Breakout (Beli)"
-                ]),
-                html.Div([
-                    html.Span("▼", style={"color":"#ef4444", "fontWeight":"bold", "marginRight":"8px"}),
-                    "False Breakout (Abaikan)"
-                ])
-            ], className="legend-box")
+                html.Div([html.Span("\u2014", style={"color":"#1a1a1a","fontWeight":"bold","marginRight":"6px"}), html.Span("Harga Close")], className="legend-item"),
+                html.Div([html.Span("\u2014", style={"color":"#f59e0b","fontWeight":"bold","marginRight":"6px"}), html.Span("Resistensi")], className="legend-item"),
+                html.Div([html.Span("\u25b2", style={"color":"#059669","fontWeight":"bold","marginRight":"6px"}), html.Span("True Breakout (Beli)")], className="legend-item"),
+                html.Div([html.Span("\u25bc", style={"color":"#cc0000","fontWeight":"bold","marginRight":"6px"}), html.Span("False Breakout (Jual)")], className="legend-item"),
+            ]),
             
         ], className="sidebar"),
         
-        # MAIN CONTENT
         html.Div([
-            # Dashboard Content
-            html.Div(id="dashboard-content", style={"flex": "1"}),
-            
-            # Footer / Interactive Alert (Static template structure, hidden until loaded)
             html.Div([
-                html.Div(id="footer-status-text", style={"fontWeight": "bold"}),
+                html.Div(id="dashboard-content")
+            ], className="dashboard-wrapper"),
+            
+            html.Div([
+                html.Div(id="footer-status-text", className="footer-status"),
                 html.Div([
-                    html.Button("📄 CSV", id="btn-download-csv", className="btn-download", disabled=True),
-                    html.Button("📊 Excel", id="btn-download-excel", className="btn-download", disabled=True),
-                    html.Button("🖨️ PDF", id="btn-download-pdf", className="btn-download", disabled=True),
-                    html.Button("🚪 Keluar", id="btn-keluar", className="btn-keluar")
-                ], className="footer-actions")
-            ], id="footer-banner-container", className="footer-banner", style={"display": "none"})
+                    html.Button("Simpan Hasil", id="btn-download-csv", className="btn-simpan", disabled=True),
+                    html.Button("Keluar", id="btn-keluar", className="btn-keluar"),
+                    html.Button("", id="btn-download-excel", style={"display":"none"}),
+                    html.Button("", id="btn-download-pdf", style={"display":"none"}),
+                ], className="footer-actions"),
+            ], id="footer-banner-container", className="footer-bar"),
             
         ], className="main-content")
     ], className="app-container")
 ])
+
 
 
 # CALLBACKS
@@ -563,16 +517,16 @@ def update_upload_filename(filename):
      State('custom-ticker-input', 'value'),
      State('upload-csv', 'contents'),
      State('upload-csv', 'filename'),
-     State('date-picker', 'start_date'),
-     State('date-picker', 'end_date'),
+     State('date-start', 'date'),
+     State('date-end', 'date'),
      State('window-slider', 'value'),
      State('vol-factor-slider', 'value'),
      State('forward-window-slider', 'value'),
-     State('tp-pct-slider', 'value'),
-     State('sl-pct-slider', 'value')]
+     State('tp-pct-slider', 'value')]
 )
 def run_model(n_clicks, source_type, stock_dropdown, custom_ticker, upload_contents, upload_filename,
-              start_date_str, end_date_str, window, vol_factor, forward_window, tp_pct, sl_pct):
+              start_date_str, end_date_str, window, vol_factor, forward_window, tp_pct):
+    sl_pct = 2.0
     try:
         start_date = datetime.datetime.strptime(start_date_str.split('T')[0], '%Y-%m-%d').date()
         end_date = datetime.datetime.strptime(end_date_str.split('T')[0], '%Y-%m-%d').date()
@@ -735,53 +689,30 @@ def update_sidebar_and_footer(data):
     false_b = data['false_b']
     metrics = data['metrics']
     
-    stock_info_html = [
-        html.Div([
-            html.Span("Kode Saham :", className="info-item-value"),
-            html.Span(f" {stock_info['ticker_code']}", style={"fontFamily":"monospace"})
-        ], className="info-item"),
-        html.Div([
-            html.Span("Nama :", className="info-item-value"),
-            html.Span(f" {stock_info['stock_name']}")
-        ], className="info-item"),
-        html.Div([
-            html.Span("Sektor :", className="info-item-value"),
-            html.Span(f" {stock_info['stock_sector']}")
-        ], className="info-item"),
-        html.Div([
-            html.Span("Harga Terakhir :", className="info-item-value"),
-            html.Span(f" {stock_info['latest_close']:,.2f}")
-        ], className="info-item"),
-        html.Div([
-            html.Span("Perubahan :", className="info-item-value"),
+    stock_info_html = html.Div([
+        html.Div([html.Span("Kode Saham", className="info-item-label"), html.Span(f": {stock_info['ticker_code']}", className="info-item-value")], className="info-item"),
+        html.Div([html.Span("Nama", className="info-item-label"), html.Span(f": {stock_info['stock_name']}", className="info-item-value")], className="info-item"),
+        html.Div([html.Span("Sektor", className="info-item-label"), html.Span(f": {stock_info['stock_sector']}", className="info-item-value")], className="info-item"),
+        html.Div([html.Span("Harga Terakhir", className="info-item-label"), html.Span(f": {stock_info['latest_close']:,.0f}", className="info-item-value")], className="info-item"),
+        html.Div([html.Span("Perubahan", className="info-item-label"),
             html.Span(
-                f"{'+' if stock_info['change'] >= 0 else ''}{stock_info['change']:,.2f} ({'+' if stock_info['change'] >= 0 else ''}{stock_info['pct_change']:.2f}%)",
-                style={"color": "var(--accent-green)" if stock_info['change'] >= 0 else "var(--accent-red)", "fontWeight": "bold"}
-            )
-        ], className="info-item"),
-        html.Div([
-            html.Span("Tanggal :", className="info-item-value"),
-            html.Span(f" {stock_info['latest_date_str']}")
-        ], className="info-item")
-    ]
+                f": {'+' if stock_info['change'] >= 0 else ''}{stock_info['change']:,.0f} ({'+' if stock_info['change'] >= 0 else ''}{stock_info['pct_change']:.2f}%)",
+                style={"color": "#007a3d" if stock_info['change'] >= 0 else "#cc0000", "fontWeight": "600", "fontSize":"12px"}
+            )], className="info-item"),
+        html.Div([html.Span("Tanggal", className="info-item-label"), html.Span(f": {stock_info['latest_date_str']}", className="info-item-value")], className="info-item"),
+    ])
     
     acc_text = f"{metrics['accuracy']*100:.2f}%" if metrics is not None else "N/A"
-    detection_html = [
-        html.Div([
-            html.Span("🟢 True Breakout :", className="info-item-value"),
-            html.Span(f" {true_b} kali", style={"color": "var(--accent-green)"})
-        ], className="info-item"),
-        html.Div([
-            html.Span("🔴 False Breakout :", className="info-item-value"),
-            html.Span(f" {false_b} kali", style={"color": "var(--accent-red)"})
-        ], className="info-item"),
-        html.Div([
-            html.Span("⚫ Akurasi Sinyal :", className="info-item-value"),
-            html.Span(f" {acc_text}", style={"color": "var(--accent-blue)"})
-        ], className="info-item")
-    ]
+    detection_html = html.Div([
+        html.Div([html.Span("● ", style={"color":"#059669"}), html.Span(f"True Breakout", style={"color":"#333"}), html.Span(f"  : {true_b} kali", style={"color":"#059669","fontWeight":"600"})], style={"fontSize":"12px","lineHeight":"1.8"}),
+        html.Div([html.Span("● ", style={"color":"#cc0000"}), html.Span(f"False Breakout", style={"color":"#333"}), html.Span(f" : {false_b} kali", style={"color":"#cc0000","fontWeight":"600"})], style={"fontSize":"12px","lineHeight":"1.8"}),
+        html.Div([html.Span("● ", style={"color":"#555"}), html.Span(f"Akurasi Sinyal", style={"color":"#333"}), html.Span(f" : {acc_text}", style={"color":"#0066cc","fontWeight":"600"})], style={"fontSize":"12px","lineHeight":"1.8"}),
+    ])
     
-    status_text = f"✔️ Proses selesai! Total data yang digunakan: {stock_info['total_rows']} baris"
+    status_text = [
+        html.Span("✓ ", style={"color":"#059669","fontWeight":"bold"}),
+        html.Span(f"Proses selesai! Total data yang digunakan: {stock_info['total_rows']} baris")
+    ]
     has_signals = (true_b + false_b) > 0
     btn_disabled = not has_signals
     
@@ -824,37 +755,44 @@ def render_dashboard(data):
     stock_info = data['stock_info']
     
     # Plot
+    ticker_display = stock_info['ticker_code'].replace('.JK','') if '.JK' in stock_info['ticker_code'] else stock_info['ticker_code']
     fig = go.Figure()
     
-    fig.add_trace(go.Scatter(x=df.index, y=df['Close'], 
-                             name='Harga Close', line=dict(color='#0f172a', width=2)))
-    fig.add_trace(go.Scatter(x=df.index, y=df['Resistance'], 
-                             name='Resistensi', line=dict(color='#f59e0b', width=1.5)))
+    fig.add_trace(go.Scatter(x=df.index, y=df['Close'],
+                             name='Harga Close',
+                             line=dict(color='#1a1a1a', width=1.5)))
+    fig.add_trace(go.Scatter(x=df.index, y=df['Resistance'],
+                             name='Resistensi',
+                             line=dict(color='#e07b00', width=1.5)))
     
     if len(candidate_df) > 0:
         c_true = candidate_df[candidate_df['True_Breakout'] == 1]
         c_false = candidate_df[candidate_df['True_Breakout'] == 0]
         
         fig.add_trace(go.Scatter(x=c_true.index, y=c_true['Close'], mode='markers+text',
-                                 marker=dict(symbol='triangle-up', color='#10b981', size=14),
+                                 marker=dict(symbol='triangle-up', color='#059669', size=12),
                                  text=[f"True Breakout<br>{dt.strftime('%d %b %Y')}" for dt in c_true.index],
-                                 textposition="top center", textfont=dict(color='#10b981', size=10),
+                                 textposition="top center",
+                                 textfont=dict(color='#059669', size=9),
                                  name='True Breakout (Beli)'))
         fig.add_trace(go.Scatter(x=c_false.index, y=c_false['Close'], mode='markers+text',
-                                 marker=dict(symbol='triangle-down', color='#ef4444', size=14),
+                                 marker=dict(symbol='triangle-down', color='#cc0000', size=12),
                                  text=[f"False Breakout<br>{dt.strftime('%d %b %Y')}" for dt in c_false.index],
-                                 textposition="bottom center", textfont=dict(color='#ef4444', size=10),
-                                 name='False Breakout (Abaikan)'))
+                                 textposition="bottom center",
+                                 textfont=dict(color='#cc0000', size=9),
+                                 name='False Breakout (Jual)'))
     
     fig.update_layout(
-        title=dict(text=f"Grafik Deteksi Breakout - {stock_info['stock_name']}", font=dict(size=18, color='#0f172a', family="Inter"), x=0.5),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        font_color='var(--text-primary)',
-        height=500,
+        title=dict(text=f"Grafik Deteksi Breakout - {ticker_display}",
+                   font=dict(size=16, color='#1a1a1a', family="Inter"), x=0.5),
+        paper_bgcolor='#ffffff',
+        plot_bgcolor='#ffffff',
+        font_color='#1a1a1a',
+        font=dict(size=12, family="Inter"),
+        height=420,
         hovermode='x unified',
-        margin=dict(t=50, b=10, l=10, r=10),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        margin=dict(t=45, b=10, l=50, r=15),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=11)),
         xaxis=dict(
             rangeselector=dict(
                 buttons=list([
@@ -865,33 +803,35 @@ def render_dashboard(data):
                     dict(count=1, label="1Y", step="year", stepmode="backward"),
                     dict(step="all", label="All")
                 ]),
-                bgcolor='#f1f5f9',
-                activecolor='#cbd5e1',
-                font=dict(color='#0f172a', size=11)
+                bgcolor='#f5f5f5',
+                activecolor='#d0d0d0',
+                font=dict(color='#1a1a1a', size=11)
             ),
-            gridcolor='var(--border-color)',
-            type='date'
+            gridcolor='#eeeeee',
+            linecolor='#cccccc',
+            type='date',
+            title=dict(text="")
         ),
-        yaxis=dict(gridcolor='var(--border-color)', title="Harga")
+        yaxis=dict(gridcolor='#eeeeee', linecolor='#cccccc', title="Harga")
     )
         
     table_rows = []
     if len(candidate_df) > 0:
         for idx, (dt, row) in enumerate(candidate_df.iterrows()):
             sig_text = 'True Breakout' if row['True_Breakout'] == 1.0 else 'False Breakout'
-            sig_badge_class = 'badge-true' if row['True_Breakout'] == 1.0 else 'badge-false'
+            sig_color = '#059669' if row['True_Breakout'] == 1.0 else '#cc0000'
             desc = f"Close {row['Close']:,.2f} > Resistance {row['Resistance']:,.2f} & Vol {row['Vol_Ratio']:.2f}x"
             table_rows.append(
                 html.Tr([
                     html.Td(str(idx + 1)),
                     html.Td(dt.strftime('%d %b %Y')),
-                    html.Td(sig_text, className=sig_badge_class),
-                    html.Td(f"Rp {row['Close']:,.2f}"),
+                    html.Td(sig_text, style={"color": sig_color, "fontWeight": "600"}),
+                    html.Td(f"{row['Close']:,.0f}"),
                     html.Td(desc)
                 ])
             )
     else:
-        table_rows.append(html.Tr([html.Td("Tidak ada sinyal breakout terdeteksi.", colSpan=5, style={"textAlign":"center"})]))
+        table_rows.append(html.Tr([html.Td("Tidak ada sinyal terdeteksi.", colSpan=5, style={"textAlign":"center"})]))
         
     signal_table = html.Table([
         html.Thead(
@@ -924,49 +864,61 @@ def render_dashboard(data):
         
     eval_table_rows = [
         html.Tr([html.Td("Total Sinyal"), html.Td(str(tot_sig))]),
-        html.Tr([html.Td("Sinyal Benar"), html.Td(str(correct_sig), className="badge-true")]),
-        html.Tr([html.Td("Sinyal Salah"), html.Td(str(wrong_sig), className="badge-false" if wrong_sig > 0 else "")]),
-        html.Tr([html.Td("Akurasi"), html.Td(f"{acc_val*100:.2f}%", style={"color":"var(--accent-green)", "fontWeight":"bold"})])
+        html.Tr([html.Td("Sinyal Benar"), html.Td(str(correct_sig))]),
+        html.Tr([html.Td("Sinyal Salah"), html.Td(str(wrong_sig))]),
+        html.Tr([html.Td("Akurasi", style={"fontWeight":"bold"}), html.Td(f"{acc_val*100:.2f}%", style={"color":"#059669", "fontWeight":"bold"})])
     ]
     
     eval_table = html.Table([
+        html.Thead(
+            html.Tr([html.Th("Metrik"), html.Th("Nilai", style={"textAlign":"right"})])
+        ),
         html.Tbody(eval_table_rows)
-    ], className="custom-table")
+    ], className="eval-table")
     
     fig_pie = go.Figure()
     if tot_sig > 0:
         fig_pie.add_trace(go.Pie(
             labels=['Sinyal Benar', 'Sinyal Salah'],
             values=[correct_sig, wrong_sig],
-            hole=.3,
-            marker=dict(colors=['#10b981', '#ef4444']),
+            hole=0,
+            marker=dict(colors=['#059669', '#cc0000']),
             textinfo='percent'
         ))
     fig_pie.update_layout(
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        font_color='var(--text-primary)',
-        height=180,
+        paper_bgcolor='#ffffff',
+        plot_bgcolor='#ffffff',
+        font_color='#1a1a1a',
+        font=dict(size=11, family="Inter"),
+        height=150,
         margin=dict(l=10, r=10, t=10, b=10),
-        showlegend=True
+        showlegend=True,
+        legend=dict(yanchor="middle", y=0.5, xanchor="left", x=1.0)
     )
     
     return html.Div([
+        # Baris Atas: Grafik
         html.Div([
             dcc.Graph(figure=fig, config={'displayModeBar': False})
-        ], className="card", style={"marginBottom":"20px", "padding": "10px"}),
+        ], className="card", style={"marginBottom":"10px", "padding": "0"}),
         
+        # Baris Bawah: Tabel & Evaluasi
         html.Div([
+            # Daftar Sinyal
             html.Div([
-                html.H4("DAFTAR SINYAL", style={"marginTop":"0", "color": "#0284c7", "fontSize": "14px"}),
-                html.Div(signal_table, className="data-table-container", style={"maxHeight":"280px", "overflowY":"auto"})
-            ], className="card", style={"flex":"0 0 65%"}),
+                html.Div("DAFTAR SINYAL", className="sidebar-title", style={"marginTop":"0", "color":"#0066cc", "paddingLeft":"15px"}),
+                html.Div(signal_table, className="data-table-container", style={"maxHeight":"260px", "overflowY":"auto", "border":"none", "borderTop":"1px solid #d0d0d0", "borderRadius":"0"})
+            ], className="card", style={"flex":"0 0 68%", "padding":"10px 0 0 0", "overflow":"hidden"}),
+            
+            # Evaluasi Akurasi
             html.Div([
-                html.H4("EVALUASI AKURASI", style={"marginTop":"0", "color": "#0284c7", "fontSize": "14px"}),
-                eval_table,
-                dcc.Graph(figure=fig_pie, config={'displayModeBar': False})
-            ], className="card", style={"flex":"0 0 35%", "display":"flex", "flexDirection":"column", "justifyContent":"space-between"})
-        ], style={"display":"flex", "gap":"20px"})
+                html.Div("EVALUASI AKURASI", className="sidebar-title", style={"marginTop":"0", "color":"#0066cc", "paddingLeft":"15px"}),
+                html.Div([
+                    eval_table,
+                    dcc.Graph(figure=fig_pie, config={'displayModeBar': False})
+                ], style={"padding":"0 15px"})
+            ], className="card", style={"flex":"0 0 32%", "padding":"10px 0 10px 0", "display":"flex", "flexDirection":"column", "gap":"10px"})
+        ], style={"display":"flex", "gap":"10px", "alignItems":"stretch"})
     ])
 
 
