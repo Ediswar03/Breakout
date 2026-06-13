@@ -393,8 +393,7 @@ app.layout = html.Div([
             html.Div([
                 html.Label("Ticker Saham", className="control-label"),
                 dcc.Input(id="custom-ticker-input", type="text", value="AAPL",
-                          style={"width":"100%","padding":"4px 6px","borderRadius":"3px",
-                                 "border":"1px solid #d0d0d0","fontSize":"12px"})
+                          className="custom-input")
             ], id="custom-ticker-manual-container", className="control-group"),
             
             html.Div([
@@ -417,15 +416,13 @@ app.layout = html.Div([
             html.Div([
                 html.Label("Tanggal Mulai", className="control-label"),
                 dcc.Input(id="date-start", type="text", value="2022-01-01",
-                          style={"width":"100%","padding":"3px 6px","borderRadius":"3px",
-                                 "border":"1px solid #d0d0d0","fontSize":"11px","fontFamily":"inherit"})
+                          className="custom-input")
             ], className="control-group"),
             
             html.Div([
                 html.Label("Tanggal Akhir", className="control-label"),
                 dcc.Input(id="date-end", type="text", value="2024-06-01",
-                          style={"width":"100%","padding":"3px 6px","borderRadius":"3px",
-                                 "border":"1px solid #d0d0d0","fontSize":"11px","fontFamily":"inherit"})
+                          className="custom-input")
             ], className="control-group"),
             
             html.Div([
@@ -447,10 +444,10 @@ app.layout = html.Div([
             
             html.Div("KETERANGAN", className="sidebar-title"),
             html.Div([
-                html.Div([html.Span("\u2014", style={"color":"#1a1a1a","fontWeight":"bold","marginRight":"6px"}), html.Span("Harga Close")], className="legend-item"),
+                html.Div([html.Span("\u2014", style={"color":"#1e293b","fontWeight":"bold","marginRight":"6px"}), html.Span("Harga Close")], className="legend-item"),
                 html.Div([html.Span("\u2014", style={"color":"#f59e0b","fontWeight":"bold","marginRight":"6px"}), html.Span("Resistensi")], className="legend-item"),
-                html.Div([html.Span("\u25b2", style={"color":"#059669","fontWeight":"bold","marginRight":"6px"}), html.Span("True Breakout (Beli)")], className="legend-item"),
-                html.Div([html.Span("\u25bc", style={"color":"#cc0000","fontWeight":"bold","marginRight":"6px"}), html.Span("False Breakout (Jual)")], className="legend-item"),
+                html.Div([html.Span("\u25b2", style={"color":"#10b981","fontWeight":"bold","marginRight":"6px"}), html.Span("True Breakout (Beli)")], className="legend-item"),
+                html.Div([html.Span("\u25bc", style={"color":"#f43f5e","fontWeight":"bold","marginRight":"6px"}), html.Span("False Breakout (Jual)")], className="legend-item"),
             ]),
             
         ], className="sidebar"),
@@ -680,7 +677,7 @@ def update_sidebar_and_footer(data):
             "Tidak ada data saham.",
             "Tidak ada hasil deteksi.",
             f"⚠️ {err_msg}",
-            {"display": "flex", "backgroundColor": "rgba(239, 68, 68, 0.08)", "borderColor": "rgba(239, 68, 68, 0.2)", "color": "var(--accent-red)"},
+            {"display": "flex", "backgroundColor": "var(--accent-red-bg)", "borderColor": "rgba(244, 63, 94, 0.2)", "color": "var(--accent-red)"},
             True, True, True
         )
         
@@ -697,16 +694,16 @@ def update_sidebar_and_footer(data):
         html.Div([html.Span("Perubahan", className="info-item-label"),
             html.Span(
                 f": {'+' if stock_info['change'] >= 0 else ''}{stock_info['change']:,.0f} ({'+' if stock_info['change'] >= 0 else ''}{stock_info['pct_change']:.2f}%)",
-                style={"color": "#007a3d" if stock_info['change'] >= 0 else "#cc0000", "fontWeight": "600", "fontSize":"12px"}
+                style={"color": "#10b981" if stock_info['change'] >= 0 else "#f43f5e", "fontWeight": "600", "fontSize":"11px"}
             )], className="info-item"),
         html.Div([html.Span("Tanggal", className="info-item-label"), html.Span(f": {stock_info['latest_date_str']}", className="info-item-value")], className="info-item"),
     ])
     
     acc_text = f"{metrics['accuracy']*100:.2f}%" if metrics is not None else "N/A"
     detection_html = html.Div([
-        html.Div([html.Span("● ", style={"color":"#059669"}), html.Span(f"True Breakout", style={"color":"#333"}), html.Span(f"  : {true_b} kali", style={"color":"#059669","fontWeight":"600"})], style={"fontSize":"12px","lineHeight":"1.8"}),
-        html.Div([html.Span("● ", style={"color":"#cc0000"}), html.Span(f"False Breakout", style={"color":"#333"}), html.Span(f" : {false_b} kali", style={"color":"#cc0000","fontWeight":"600"})], style={"fontSize":"12px","lineHeight":"1.8"}),
-        html.Div([html.Span("● ", style={"color":"#555"}), html.Span(f"Akurasi Sinyal", style={"color":"#333"}), html.Span(f" : {acc_text}", style={"color":"#0066cc","fontWeight":"600"})], style={"fontSize":"12px","lineHeight":"1.8"}),
+        html.Div([html.Span("● ", style={"color":"#10b981"}), html.Span("True Breakout", style={"color":"var(--text-primary)"}), html.Span(f"  : {true_b} kali", style={"color":"#10b981","fontWeight":"600"})], style={"fontSize":"11px","lineHeight":"1.8"}),
+        html.Div([html.Span("● ", style={"color":"#f43f5e"}), html.Span("False Breakout", style={"color":"var(--text-primary)"}), html.Span(f" : {false_b} kali", style={"color":"#f43f5e","fontWeight":"600"})], style={"fontSize":"11px","lineHeight":"1.8"}),
+        html.Div([html.Span("● ", style={"color":"var(--text-secondary)"}), html.Span("Akurasi Sinyal", style={"color":"var(--text-primary)"}), html.Span(f" : {acc_text}", style={"color":"#3b82f6","fontWeight":"600"})], style={"fontSize":"11px","lineHeight":"1.8"}),
     ])
     
     status_text = [
@@ -760,38 +757,39 @@ def render_dashboard(data):
     
     fig.add_trace(go.Scatter(x=df.index, y=df['Close'],
                              name='Harga Close',
-                             line=dict(color='#1a1a1a', width=1.5)))
+                             line=dict(color='#1e293b', width=2)))
     fig.add_trace(go.Scatter(x=df.index, y=df['Resistance'],
                              name='Resistensi',
-                             line=dict(color='#e07b00', width=1.5)))
+                             line=dict(color='#f59e0b', width=1.5, dash='dash')))
     
     if len(candidate_df) > 0:
         c_true = candidate_df[candidate_df['True_Breakout'] == 1]
         c_false = candidate_df[candidate_df['True_Breakout'] == 0]
         
         fig.add_trace(go.Scatter(x=c_true.index, y=c_true['Close'], mode='markers+text',
-                                 marker=dict(symbol='triangle-up', color='#059669', size=12),
+                                 marker=dict(symbol='triangle-up', color='#10b981', size=12),
                                  text=[f"True Breakout<br>{dt.strftime('%d %b %Y')}" for dt in c_true.index],
                                  textposition="top center",
-                                 textfont=dict(color='#059669', size=9),
+                                 textfont=dict(color='#10b981', size=9, family="Inter"),
                                  name='True Breakout (Beli)'))
         fig.add_trace(go.Scatter(x=c_false.index, y=c_false['Close'], mode='markers+text',
-                                 marker=dict(symbol='triangle-down', color='#cc0000', size=12),
+                                 marker=dict(symbol='triangle-down', color='#f43f5e', size=12),
                                  text=[f"False Breakout<br>{dt.strftime('%d %b %Y')}" for dt in c_false.index],
                                  textposition="bottom center",
-                                 textfont=dict(color='#cc0000', size=9),
+                                 textfont=dict(color='#f43f5e', size=9, family="Inter"),
                                  name='False Breakout (Jual)'))
     
     fig.update_layout(
         title=dict(text=f"Grafik Deteksi Breakout - {ticker_display}",
-                   font=dict(size=16, color='#1a1a1a', family="Inter"), x=0.5),
+                   font=dict(size=14, color='#0f172a', family="Inter"), x=0.5),
         paper_bgcolor='#ffffff',
         plot_bgcolor='#ffffff',
-        font_color='#1a1a1a',
-        font=dict(size=12, family="Inter"),
+        font_color='#0f172a',
+        font=dict(size=11, family="Inter"),
         height=420,
         hovermode='x unified',
-        margin=dict(t=45, b=10, l=50, r=15),
+        hoverlabel=dict(bgcolor='#ffffff', bordercolor='#e2e8f0', font=dict(family='Inter', size=11, color='#0f172a')),
+        margin=dict(t=50, b=10, l=50, r=15),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=11)),
         xaxis=dict(
             rangeselector=dict(
@@ -803,29 +801,29 @@ def render_dashboard(data):
                     dict(count=1, label="1Y", step="year", stepmode="backward"),
                     dict(step="all", label="All")
                 ]),
-                bgcolor='#f5f5f5',
-                activecolor='#d0d0d0',
-                font=dict(color='#1a1a1a', size=11)
+                bgcolor='#f1f5f9',
+                activecolor='#cbd5e1',
+                font=dict(color='#0f172a', size=11, family="Inter")
             ),
-            gridcolor='#eeeeee',
-            linecolor='#cccccc',
+            gridcolor='#f1f5f9',
+            linecolor='#cbd5e1',
             type='date',
             title=dict(text="")
         ),
-        yaxis=dict(gridcolor='#eeeeee', linecolor='#cccccc', title="Harga")
+        yaxis=dict(gridcolor='#f1f5f9', linecolor='#cbd5e1', title="Harga")
     )
         
     table_rows = []
     if len(candidate_df) > 0:
         for idx, (dt, row) in enumerate(candidate_df.iterrows()):
             sig_text = 'True Breakout' if row['True_Breakout'] == 1.0 else 'False Breakout'
-            sig_color = '#059669' if row['True_Breakout'] == 1.0 else '#cc0000'
+            sig_class = 'badge-true' if row['True_Breakout'] == 1.0 else 'badge-false'
             desc = f"Close {row['Close']:,.2f} > Resistance {row['Resistance']:,.2f} & Vol {row['Vol_Ratio']:.2f}x"
             table_rows.append(
                 html.Tr([
                     html.Td(str(idx + 1)),
                     html.Td(dt.strftime('%d %b %Y')),
-                    html.Td(sig_text, style={"color": sig_color, "fontWeight": "600"}),
+                    html.Td(html.Span(sig_text, className=sig_class)),
                     html.Td(f"{row['Close']:,.0f}"),
                     html.Td(desc)
                 ])
@@ -866,7 +864,7 @@ def render_dashboard(data):
         html.Tr([html.Td("Total Sinyal"), html.Td(str(tot_sig))]),
         html.Tr([html.Td("Sinyal Benar"), html.Td(str(correct_sig))]),
         html.Tr([html.Td("Sinyal Salah"), html.Td(str(wrong_sig))]),
-        html.Tr([html.Td("Akurasi", style={"fontWeight":"bold"}), html.Td(f"{acc_val*100:.2f}%", style={"color":"#059669", "fontWeight":"bold"})])
+        html.Tr([html.Td("Akurasi", style={"fontWeight":"bold"}), html.Td(f"{acc_val*100:.2f}%", style={"color":"#10b981", "fontWeight":"bold"})])
     ]
     
     eval_table = html.Table([
@@ -881,16 +879,17 @@ def render_dashboard(data):
         fig_pie.add_trace(go.Pie(
             labels=['Sinyal Benar', 'Sinyal Salah'],
             values=[correct_sig, wrong_sig],
-            hole=0,
-            marker=dict(colors=['#059669', '#cc0000']),
-            textinfo='percent'
+            hole=0.6,
+            marker=dict(colors=['#10b981', '#f43f5e']),
+            textinfo='percent',
+            hoverinfo='label+value+percent'
         ))
     fig_pie.update_layout(
         paper_bgcolor='#ffffff',
         plot_bgcolor='#ffffff',
-        font_color='#1a1a1a',
+        font_color='#0f172a',
         font=dict(size=11, family="Inter"),
-        height=150,
+        height=140,
         margin=dict(l=10, r=10, t=10, b=10),
         showlegend=True,
         legend=dict(yanchor="middle", y=0.5, xanchor="left", x=1.0)
@@ -900,25 +899,25 @@ def render_dashboard(data):
         # Baris Atas: Grafik
         html.Div([
             dcc.Graph(figure=fig, config={'displayModeBar': False})
-        ], className="card", style={"marginBottom":"10px", "padding": "0"}),
+        ], className="card", style={"marginBottom":"16px", "padding": "0"}),
         
         # Baris Bawah: Tabel & Evaluasi
         html.Div([
             # Daftar Sinyal
             html.Div([
-                html.Div("DAFTAR SINYAL", className="sidebar-title", style={"marginTop":"0", "color":"#0066cc", "paddingLeft":"15px"}),
-                html.Div(signal_table, className="data-table-container", style={"maxHeight":"260px", "overflowY":"auto", "border":"none", "borderTop":"1px solid #d0d0d0", "borderRadius":"0"})
-            ], className="card", style={"flex":"0 0 68%", "padding":"10px 0 0 0", "overflow":"hidden"}),
+                html.Div("DAFTAR SINYAL", className="card-title"),
+                html.Div(signal_table, className="data-table-container")
+            ], className="card", style={"padding":"16px 0 0 0", "overflow":"hidden"}),
             
             # Evaluasi Akurasi
             html.Div([
-                html.Div("EVALUASI AKURASI", className="sidebar-title", style={"marginTop":"0", "color":"#0066cc", "paddingLeft":"15px"}),
+                html.Div("EVALUASI AKURASI", className="card-title"),
                 html.Div([
                     eval_table,
                     dcc.Graph(figure=fig_pie, config={'displayModeBar': False})
-                ], style={"padding":"0 15px"})
-            ], className="card", style={"flex":"0 0 32%", "padding":"10px 0 10px 0", "display":"flex", "flexDirection":"column", "gap":"10px"})
-        ], style={"display":"flex", "gap":"10px", "alignItems":"stretch"})
+                ], style={"display":"flex", "flexDirection":"column", "gap":"12px"})
+            ], className="card", style={"display":"flex", "flexDirection":"column", "gap":"12px"})
+        ], className="dashboard-grid")
     ])
 
 
