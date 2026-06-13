@@ -1084,4 +1084,4 @@ def reset_app(n_clicks):
 # RUN APP
 if __name__ == '__main__':
     # Use standard port 8050
-    app.run(host='127.0.0.1', port=8050, debug=False)
+    app.run(host='127.0.0.1', port=8050, debug=True)
