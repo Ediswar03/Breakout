@@ -366,12 +366,7 @@ app.layout = html.Div([
     html.Div([
         # SIDEBAR
         html.Div([
-            html.Div([
-                html.Div("🚀 Breakout", style={"fontSize":"24px", "fontWeight":"800", "background":"linear-gradient(135deg, #38bdf8, #818cf8)", "-webkit-background-clip":"text", "-webkit-text-fill-color":"transparent"}),
-                html.Div("Pro", style={"fontSize":"24px", "fontWeight":"300", "color":"var(--text-primary)"})
-            ], style={"display":"flex", "gap":"6px", "marginBottom":"25px", "alignItems":"center", "borderBottom":"1px solid rgba(255,255,255,0.05)", "paddingBottom":"20px"}),
-            
-            html.Div("⚙️ PENGATURAN DATA", className="sidebar-title"),
+            html.Div("PENGATURAN", className="sidebar-title"),
             
             html.Div([
                 html.Label("Pilih Sumber Data", className="control-label"),
@@ -445,9 +440,10 @@ app.layout = html.Div([
             # Proses Button
             html.Button("Proses", id="btn-proses", className="btn-proses", n_clicks=0),
             
-            # Parameter Algoritma
-            html.Div("🔬 PARAMETER ALGORITMA", className="sidebar-title"),
+            # Parameter Algoritma (Disembunyikan agar sesuai gambar)
             html.Div([
+                html.Div("🔬 PARAMETER ALGORITMA", className="sidebar-title"),
+                html.Div([
                 html.Label("Rolling Window Resistensi", className="control-label"),
                 dcc.Slider(id="window-slider", min=5, max=40, step=1, value=20, marks={5:"5", 20:"20", 40:"40"})
             ], className="control-group"),
@@ -469,20 +465,21 @@ app.layout = html.Div([
             ], className="control-group"),
             
             html.Div([
-                html.Label("Stop Loss (%)", className="control-label"),
-                dcc.Slider(id="sl-pct-slider", min=1.0, max=5.0, step=0.5, value=2.0, marks={1.0:"1%", 2.0:"2%", 5.0:"5%"})
+                html.Label("Max Depth Pohon", className="control-label"),
+                dcc.Slider(id="max-depth-slider", min=3, max=10, step=1, value=5, marks={3:"3", 5:"5", 10:"10"})
             ], className="control-group"),
+            ], style={"display": "none"}),
             
             # Informasi Saham
-            html.Div("📈 INFORMASI SAHAM", className="sidebar-title", style={"marginTop": "25px"}),
+            html.Div("INFORMASI SAHAM", className="sidebar-title", style={"marginTop": "25px"}),
             html.Div(id="sidebar-stock-info", className="legend-box"),
             
             # Hasil Deteksi
-            html.Div("⚡ HASIL DETEKSI", className="sidebar-title", style={"marginTop": "25px"}),
+            html.Div("HASIL DETEKSI", className="sidebar-title", style={"marginTop": "25px"}),
             html.Div(id="sidebar-detection-results", className="legend-box"),
             
             # Keterangan Legend
-            html.Div("🏷️ KETERANGAN GRAFIK", className="sidebar-title", style={"marginTop": "25px"}),
+            html.Div("KETERANGAN", className="sidebar-title", style={"marginTop": "25px"}),
             html.Div([
                 html.Div([
                     html.Span("━", style={"color":"#38bdf8", "fontWeight":"bold", "marginRight":"8px"}),
@@ -506,27 +503,8 @@ app.layout = html.Div([
         
         # MAIN CONTENT
         html.Div([
-            # Header
-            html.Div([
-                html.H1("Deteksi Pola Breakout Saham Hybrid", className="app-title"),
-                html.Div("Rule-Based Filtering & Machine Learning Classification Dashboard", className="app-subtitle")
-            ], className="app-header"),
-            
-            # Tabs
-            dcc.Tabs(
-                id="main-tabs",
-                value="tab-grafik",
-                parent_className="custom-tabs-container",
-                content_className="tab-content-container",
-                children=[
-                    dcc.Tab(label="📈 Grafik & Sinyal", value="tab-grafik", className="custom-tab", selected_className="custom-tab--selected"),
-                    dcc.Tab(label="🧠 Performa Random Forest", value="tab-ml", className="custom-tab", selected_className="custom-tab--selected"),
-                    dcc.Tab(label="📝 Draf Penelitian", value="tab-draft", className="custom-tab", selected_className="custom-tab--selected")
-                ]
-            ),
-            
-            # Active Tab Content
-            html.Div(id="tab-content"),
+            # Dashboard Content
+            html.Div(id="dashboard-content", style={"flex": "1"}),
             
             # Footer / Interactive Alert (Static template structure, hidden until loaded)
             html.Div([
@@ -817,11 +795,10 @@ def update_sidebar_and_footer(data):
 
 
 @app.callback(
-    Output('tab-content', 'children'),
-    [Input('main-tabs', 'value'),
-     Input('store-processed-data', 'data')]
+    Output('dashboard-content', 'children'),
+    [Input('store-processed-data', 'data')]
 )
-def render_tab_content(active_tab, data):
+def render_dashboard(data):
     if data is None:
         return html.Div("Silakan lengkapi pengaturan dan klik tombol 'Proses'.", style={"padding":"40px", "textAlign":"center", "color":"var(--text-secondary)"})
         
@@ -831,151 +808,54 @@ def render_tab_content(active_tab, data):
             html.P(data['error_msg'])
         ], className="card", style={"borderColor":"var(--accent-red)", "color":"var(--text-secondary)"})
         
-    if active_tab == 'tab-draft':
-        draft_content = load_draft()
-        return html.Div([
-            html.H3("Draft Bab I - III Laporan Penelitian UTS", style={"marginTop":"0", "color":"var(--text-primary)"}),
-            html.Div("💡 Salin draf materi metodologi di bawah ini langsung ke file penelitian kelompok Anda.", className="legend-box", style={"marginBottom":"20px"}),
-            dcc.Markdown(draft_content, className="markdown-container")
-        ], className="card")
+    df = pd.read_json(io.StringIO(data['df_json']))
+    if 'Date' in df.columns:
+        df['Date'] = pd.to_datetime(df['Date'])
+        df.set_index('Date', inplace=True)
         
-    elif active_tab == 'tab-ml':
-        metrics = data['metrics']
-        if metrics is None:
-            return html.Div("⚠️ Data latihan terlalu sedikit untuk menguji performa model Machine Learning.", className="card", style={"color":"var(--accent-red)", "textAlign":"center", "padding":"40px"})
-            
-        feat_imp_dict = data['feat_imp']
-        feat_imp_df = pd.DataFrame(list(feat_imp_dict.items()), columns=['Fitur', 'Skor Bobot']).sort_values(by='Skor Bobot', ascending=True)
-        fig_imp = px.bar(feat_imp_df, x='Skor Bobot', y='Fitur', orientation='h', color_discrete_sequence=['#0284c7'])
-        fig_imp.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font_color='var(--text-primary)',
-            xaxis=dict(gridcolor='var(--border-color)'),
-            yaxis=dict(gridcolor='rgba(0,0,0,0)'),
-            margin=dict(l=10, r=10, t=10, b=10),
-            height=300
-        )
+    candidate_df = pd.read_json(io.StringIO(data['candidate_df_json']))
+    if len(candidate_df) > 0 and 'Date' in candidate_df.columns:
+        candidate_df['Date'] = pd.to_datetime(candidate_df['Date'])
+        candidate_df.set_index('Date', inplace=True)
         
-        df = pd.read_json(io.StringIO(data['df_json']))
-        if 'Date' in df.columns:
-            df['Date'] = pd.to_datetime(df['Date'])
-            df.set_index('Date', inplace=True)
-            
-        test_results = pd.read_json(io.StringIO(data['test_results_json']))
-        if len(test_results) > 0 and 'Date' in test_results.columns:
-            test_results['Date'] = pd.to_datetime(test_results['Date'])
-            test_results.set_index('Date', inplace=True)
-            
-        fig_t = go.Figure()
-        if len(test_results) > 0:
-            test_start = test_results.index.min()
-            test_end = test_results.index.max()
-            df_test = df.loc[test_start:test_end]
-            
-            fig_t.add_trace(go.Scatter(x=df_test.index, y=df_test['Close'], name='Harga Close (Periode Uji)', line=dict(color='#94a3b8', width=2)))
-            
-            tp = test_results[(test_results['Actual'] == 1) & (test_results['Predicted'] == 1)]
-            fp = test_results[(test_results['Actual'] == 0) & (test_results['Predicted'] == 1)]
-            tn = test_results[(test_results['Actual'] == 0) & (test_results['Predicted'] == 0)]
-            fn = test_results[(test_results['Actual'] == 1) & (test_results['Predicted'] == 0)]
-            
-            fig_t.add_trace(go.Scatter(x=tp.index, y=df.loc[tp.index, 'Close'], mode='markers',
-                                     marker=dict(symbol='triangle-up', color='#10b981', size=13, line=dict(width=1, color='black')),
-                                     name='True Positive'))
-            fig_t.add_trace(go.Scatter(x=fp.index, y=df.loc[fp.index, 'Close'], mode='markers',
-                                     marker=dict(symbol='triangle-down', color='#ef4444', size=13, line=dict(width=1, color='black')),
-                                     name='False Positive'))
-            fig_t.add_trace(go.Scatter(x=tn.index, y=df.loc[tn.index, 'Close'], mode='markers',
-                                     marker=dict(symbol='circle', color='#3b82f6', size=10, line=dict(width=1, color='black')),
-                                     name='True Negative'))
-            fig_t.add_trace(go.Scatter(x=fn.index, y=df.loc[fn.index, 'Close'], mode='markers',
-                                     marker=dict(symbol='x', color='#a855f7', size=12),
-                                     name='False Negative'))
-                                     
-        fig_t.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font_color='var(--text-primary)',
-            xaxis=dict(gridcolor='var(--border-color)', rangeslider=dict(visible=False)),
-            yaxis=dict(gridcolor='var(--border-color)'),
-            margin=dict(l=10, r=10, t=10, b=10),
-            height=300,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
+    true_b = data['true_b']
+    false_b = data['false_b']
+    metrics = data['metrics']
+    stock_info = data['stock_info']
+    
+    # Plot
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatter(x=df.index, y=df['Close'], 
+                             name='Harga Close', line=dict(color='#0f172a', width=2)))
+    fig.add_trace(go.Scatter(x=df.index, y=df['Resistance'], 
+                             name='Resistensi', line=dict(color='#f59e0b', width=1.5)))
+    
+    if len(candidate_df) > 0:
+        c_true = candidate_df[candidate_df['True_Breakout'] == 1]
+        c_false = candidate_df[candidate_df['True_Breakout'] == 0]
         
-        return html.Div([
-            html.H3("🧠 Performa Klasifikasi Random Forest (Out-of-Sample)", style={"marginTop":"0", "color":"var(--text-primary)"}),
-            html.Div([
-                html.Div([
-                    html.Div("Akurasi (Accuracy)", className="metric-label"),
-                    html.Div(f"{metrics['accuracy']*100:.2f}%", className="metric-value")
-                ], className="metric-card"),
-                html.Div([
-                    html.Div("Presisi (Precision)", className="metric-label"),
-                    html.Div(f"{metrics['precision']*100:.2f}%", className="metric-value")
-                ], className="metric-card"),
-                html.Div([
-                    html.Div("Sensitivitas (Recall)", className="metric-label"),
-                    html.Div(f"{metrics['recall']*100:.2f}%", className="metric-value")
-                ], className="metric-card"),
-                html.Div([
-                    html.Div("F1-Score", className="metric-label"),
-                    html.Div(f"{metrics['f1']*100:.2f}%", className="metric-value")
-                ], className="metric-card")
-            ], className="grid-4", style={"marginBottom":"20px"}),
-            
-            html.Div([
-                html.Div([
-                    html.H4("Performa Prediksi Model pada Garis Harga Uji", style={"marginTop":"0"}),
-                    dcc.Graph(figure=fig_t, config={'displayModeBar': False})
-                ], className="card"),
-                html.Div([
-                    html.H4("Urutan Kepentingan Fitur (Feature Importance)", style={"marginTop":"0"}),
-                    dcc.Graph(figure=fig_imp, config={'displayModeBar': False})
-                ], className="card")
-            ], className="grid-2")
-        ])
-        
-    else: # tab-grafik
-        df = pd.read_json(io.StringIO(data['df_json']))
-        if 'Date' in df.columns:
-            df['Date'] = pd.to_datetime(df['Date'])
-            df.set_index('Date', inplace=True)
-            
-        candidate_df = pd.read_json(io.StringIO(data['candidate_df_json']))
-        if len(candidate_df) > 0 and 'Date' in candidate_df.columns:
-            candidate_df['Date'] = pd.to_datetime(candidate_df['Date'])
-            candidate_df.set_index('Date', inplace=True)
-            
-        true_b = data['true_b']
-        false_b = data['false_b']
-        metrics = data['metrics']
-        
-        # Plot
-        fig = make_subplots(rows=2, cols=1, shared_xaxes=True, 
-                            vertical_spacing=0.08, row_heights=[0.75, 0.25])
-        
-        fig.add_trace(go.Scatter(x=df.index, y=df['Close'], 
-                                 name='Harga Close', line=dict(color='#0284c7', width=2)), row=1, col=1)
-        fig.add_trace(go.Scatter(x=df.index, y=df['Resistance'], 
-                                 name='Resistensi', line=dict(color='#fb923c', dash='dash', width=1.5)), row=1, col=1)
-        
-        if len(candidate_df) > 0:
-            c_true = candidate_df[candidate_df['True_Breakout'] == 1]
-            c_false = candidate_df[candidate_df['True_Breakout'] == 0]
-            
-            fig.add_trace(go.Scatter(x=c_true.index, y=c_true['Close'], mode='markers',
-                                     marker=dict(symbol='triangle-up', color='#10b981', size=13, line=dict(width=1, color='black')),
-                                     name='True Breakout'), row=1, col=1)
-            fig.add_trace(go.Scatter(x=c_false.index, y=c_false['Close'], mode='markers',
-                                     marker=dict(symbol='triangle-down', color='#ef4444', size=13, line=dict(width=1, color='black')),
-                                     name='False Breakout (Trap)'), row=1, col=1)
-        
-        fig.add_trace(go.Bar(x=df.index, y=df['Volume'], 
-                             name='Volume', marker=dict(color='#94a3b8', opacity=0.8)), row=2, col=1)
-        
-        fig.update_xaxes(
+        fig.add_trace(go.Scatter(x=c_true.index, y=c_true['Close'], mode='markers+text',
+                                 marker=dict(symbol='triangle-up', color='#10b981', size=14),
+                                 text=[f"True Breakout<br>{dt.strftime('%d %b %Y')}" for dt in c_true.index],
+                                 textposition="top center", textfont=dict(color='#10b981', size=10),
+                                 name='True Breakout (Beli)'))
+        fig.add_trace(go.Scatter(x=c_false.index, y=c_false['Close'], mode='markers+text',
+                                 marker=dict(symbol='triangle-down', color='#ef4444', size=14),
+                                 text=[f"False Breakout<br>{dt.strftime('%d %b %Y')}" for dt in c_false.index],
+                                 textposition="bottom center", textfont=dict(color='#ef4444', size=10),
+                                 name='False Breakout (Abaikan)'))
+    
+    fig.update_layout(
+        title=dict(text=f"Grafik Deteksi Breakout - {stock_info['stock_name']}", font=dict(size=18, color='#0f172a', family="Inter"), x=0.5),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font_color='var(--text-primary)',
+        height=500,
+        hovermode='x unified',
+        margin=dict(t=50, b=10, l=10, r=10),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        xaxis=dict(
             rangeselector=dict(
                 buttons=list([
                     dict(count=1, label="1M", step="month", stepmode="backward"),
@@ -990,116 +870,104 @@ def render_tab_content(active_tab, data):
                 font=dict(color='#0f172a', size=11)
             ),
             gridcolor='var(--border-color)',
-            row=1, col=1
-        )
+            type='date'
+        ),
+        yaxis=dict(gridcolor='var(--border-color)', title="Harga")
+    )
         
-        fig.update_xaxes(gridcolor='var(--border-color)', row=2, col=1)
-        fig.update_yaxes(gridcolor='var(--border-color)', row=1, col=1)
-        fig.update_yaxes(gridcolor='var(--border-color)', row=2, col=1)
-        
-        fig.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font_color='var(--text-primary)',
-            height=400,
-            hovermode='x unified',
-            margin=dict(t=5, b=5, l=10, r=10),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
-        
-        table_rows = []
-        if len(candidate_df) > 0:
-            for idx, (dt, row) in enumerate(candidate_df.iterrows()):
-                sig_text = 'True Breakout' if row['True_Breakout'] == 1.0 else 'False Breakout'
-                sig_badge_class = 'badge-true' if row['True_Breakout'] == 1.0 else 'badge-false'
-                desc = f"Close {row['Close']:,.2f} > Resistance {row['Resistance']:,.2f} & Vol {row['Vol_Ratio']:.2f}x"
-                table_rows.append(
-                    html.Tr([
-                        html.Td(str(idx + 1)),
-                        html.Td(dt.strftime('%d %b %Y')),
-                        html.Td(sig_text, className=sig_badge_class),
-                        html.Td(f"Rp {row['Close']:,.2f}"),
-                        html.Td(desc)
-                    ])
-                )
-        else:
-            table_rows.append(html.Tr([html.Td("Tidak ada sinyal breakout terdeteksi.", colSpan=5, style={"textAlign":"center"})]))
-            
-        signal_table = html.Table([
-            html.Thead(
+    table_rows = []
+    if len(candidate_df) > 0:
+        for idx, (dt, row) in enumerate(candidate_df.iterrows()):
+            sig_text = 'True Breakout' if row['True_Breakout'] == 1.0 else 'False Breakout'
+            sig_badge_class = 'badge-true' if row['True_Breakout'] == 1.0 else 'badge-false'
+            desc = f"Close {row['Close']:,.2f} > Resistance {row['Resistance']:,.2f} & Vol {row['Vol_Ratio']:.2f}x"
+            table_rows.append(
                 html.Tr([
-                    html.Th("No"),
-                    html.Th("Tanggal"),
-                    html.Th("Sinyal"),
-                    html.Th("Harga"),
-                    html.Th("Keterangan")
+                    html.Td(str(idx + 1)),
+                    html.Td(dt.strftime('%d %b %Y')),
+                    html.Td(sig_text, className=sig_badge_class),
+                    html.Td(f"Rp {row['Close']:,.2f}"),
+                    html.Td(desc)
                 ])
-            ),
-            html.Tbody(table_rows)
-        ], className="custom-table")
+            )
+    else:
+        table_rows.append(html.Tr([html.Td("Tidak ada sinyal breakout terdeteksi.", colSpan=5, style={"textAlign":"center"})]))
         
-        test_results = pd.read_json(io.StringIO(data['test_results_json'])) if data['test_results_json'] else None
-        if len(test_results) > 0 and 'Date' in test_results.columns:
-            test_results['Date'] = pd.to_datetime(test_results['Date'])
-            test_results.set_index('Date', inplace=True)
-            
-        if metrics is not None and test_results is not None and len(test_results) > 0:
-            tot_sig = len(test_results)
-            correct_sig = int((test_results['Actual'] == test_results['Predicted']).sum())
-            wrong_sig = tot_sig - correct_sig
-            acc_val = correct_sig / tot_sig if tot_sig > 0 else 0.0
-        else:
-            tot_sig = len(candidate_df)
-            correct_sig = int(true_b)
-            wrong_sig = int(false_b)
-            acc_val = (correct_sig / tot_sig) if tot_sig > 0 else 0.0
-            
-        eval_table_rows = [
-            html.Tr([html.Td("Total Sinyal"), html.Td(str(tot_sig))]),
-            html.Tr([html.Td("Sinyal Benar"), html.Td(str(correct_sig), className="badge-true")]),
-            html.Tr([html.Td("Sinyal Salah"), html.Td(str(wrong_sig), className="badge-false" if wrong_sig > 0 else "")]),
-            html.Tr([html.Td("Akurasi"), html.Td(f"{acc_val*100:.2f}%", style={"color":"var(--accent-green)", "fontWeight":"bold"})])
-        ]
+    signal_table = html.Table([
+        html.Thead(
+            html.Tr([
+                html.Th("No"),
+                html.Th("Tanggal"),
+                html.Th("Sinyal"),
+                html.Th("Harga"),
+                html.Th("Keterangan")
+            ])
+        ),
+        html.Tbody(table_rows)
+    ], className="custom-table")
+    
+    test_results = pd.read_json(io.StringIO(data['test_results_json'])) if data['test_results_json'] else None
+    if len(test_results) > 0 and 'Date' in test_results.columns:
+        test_results['Date'] = pd.to_datetime(test_results['Date'])
+        test_results.set_index('Date', inplace=True)
         
-        eval_table = html.Table([
-            html.Tbody(eval_table_rows)
-        ], className="custom-table")
+    if metrics is not None and test_results is not None and len(test_results) > 0:
+        tot_sig = len(test_results)
+        correct_sig = int((test_results['Actual'] == test_results['Predicted']).sum())
+        wrong_sig = tot_sig - correct_sig
+        acc_val = correct_sig / tot_sig if tot_sig > 0 else 0.0
+    else:
+        tot_sig = len(candidate_df)
+        correct_sig = int(true_b)
+        wrong_sig = int(false_b)
+        acc_val = (correct_sig / tot_sig) if tot_sig > 0 else 0.0
         
-        fig_pie = go.Figure()
-        if tot_sig > 0:
-            fig_pie.add_trace(go.Pie(
-                labels=['Sinyal Benar', 'Sinyal Salah'],
-                values=[correct_sig, wrong_sig],
-                hole=.3,
-                marker=dict(colors=['#10b981', '#ef4444']),
-                textinfo='percent'
-            ))
-        fig_pie.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font_color='var(--text-primary)',
-            height=180,
-            margin=dict(l=10, r=10, t=10, b=10),
-            showlegend=True
-        )
+    eval_table_rows = [
+        html.Tr([html.Td("Total Sinyal"), html.Td(str(tot_sig))]),
+        html.Tr([html.Td("Sinyal Benar"), html.Td(str(correct_sig), className="badge-true")]),
+        html.Tr([html.Td("Sinyal Salah"), html.Td(str(wrong_sig), className="badge-false" if wrong_sig > 0 else "")]),
+        html.Tr([html.Td("Akurasi"), html.Td(f"{acc_val*100:.2f}%", style={"color":"var(--accent-green)", "fontWeight":"bold"})])
+    ]
+    
+    eval_table = html.Table([
+        html.Tbody(eval_table_rows)
+    ], className="custom-table")
+    
+    fig_pie = go.Figure()
+    if tot_sig > 0:
+        fig_pie.add_trace(go.Pie(
+            labels=['Sinyal Benar', 'Sinyal Salah'],
+            values=[correct_sig, wrong_sig],
+            hole=.3,
+            marker=dict(colors=['#10b981', '#ef4444']),
+            textinfo='percent'
+        ))
+    fig_pie.update_layout(
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font_color='var(--text-primary)',
+        height=180,
+        margin=dict(l=10, r=10, t=10, b=10),
+        showlegend=True
+    )
+    
+    return html.Div([
+        html.Div([
+            dcc.Graph(figure=fig, config={'displayModeBar': False})
+        ], className="card", style={"marginBottom":"20px", "padding": "10px"}),
         
-        return html.Div([
+        html.Div([
             html.Div([
-                dcc.Graph(figure=fig, config={'displayModeBar': False})
-            ], className="card", style={"marginBottom":"20px"}),
-            
+                html.H4("DAFTAR SINYAL", style={"marginTop":"0", "color": "#0284c7", "fontSize": "14px"}),
+                html.Div(signal_table, className="data-table-container", style={"maxHeight":"280px", "overflowY":"auto"})
+            ], className="card", style={"flex":"0 0 65%"}),
             html.Div([
-                html.Div([
-                    html.H4("Daftar Sinyal Breakout", style={"marginTop":"0"}),
-                    html.Div(signal_table, className="data-table-container", style={"maxHeight":"280px", "overflowY":"auto"})
-                ], className="card", style={"flex":"0 0 65%"}),
-                html.Div([
-                    html.H4("Evaluasi Akurasi", style={"marginTop":"0"}),
-                    eval_table,
-                    dcc.Graph(figure=fig_pie, config={'displayModeBar': False})
-                ], className="card", style={"flex":"0 0 35%", "display":"flex", "flexDirection":"column", "justifyContent":"space-between"})
-            ], style={"display":"flex", "gap":"20px"})
-        ])
+                html.H4("EVALUASI AKURASI", style={"marginTop":"0", "color": "#0284c7", "fontSize": "14px"}),
+                eval_table,
+                dcc.Graph(figure=fig_pie, config={'displayModeBar': False})
+            ], className="card", style={"flex":"0 0 35%", "display":"flex", "flexDirection":"column", "justifyContent":"space-between"})
+        ], style={"display":"flex", "gap":"20px"})
+    ])
 
 
 @app.callback(
