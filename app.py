@@ -11,6 +11,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 import dash
 from dash import dcc, html, Input, Output, State
+from dash_iconify import DashIconify
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
@@ -329,14 +330,29 @@ def load_draft():
         return "File `Draft_Bab1_3_UTS.md` tidak ditemukan."
 
 
-def parse_contents(contents, filename):
+def parse_contents(contents, filename, target_ticker=None):
     if contents is None:
         return None
     try:
         content_type, content_string = contents.split(',')
         decoded = base64.b64decode(content_string)
-        df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-        df.columns = [col.strip().capitalize() for col in df.columns]
+        text_data = decoded.decode('utf-8')
+        
+        if ';' in text_data.split('\n')[0]:
+            df = pd.read_csv(io.StringIO(text_data), sep=';')
+            if 'kode' in df.columns and target_ticker:
+                df = df[df['kode'].str.lower() == target_ticker.lower()].copy()
+                
+            rename_map = {
+                'tanggal': 'Date', 'open_price': 'Open', 'high_price': 'High',
+                'low_price': 'Low', 'close_price': 'Close', 'volume': 'Volume'
+            }
+            df.rename(columns=rename_map, inplace=True)
+        else:
+            df = pd.read_csv(io.StringIO(text_data))
+            
+        df.columns = [col.strip().capitalize() if col not in ['Date', 'Open', 'High', 'Low', 'Close', 'Volume'] else col for col in df.columns]
+        
         if 'Date' in df.columns:
             df['Date'] = pd.to_datetime(df['Date'])
             df.set_index('Date', inplace=True)
@@ -365,10 +381,10 @@ app.layout = html.Div([
     
     html.Div([
         html.Div([
-            html.Div("PENGATURAN", className="sidebar-title", style={"marginTop":"0"}),
+            html.Div([DashIconify(icon="lucide:settings", width=14, style={"marginRight":"6px", "verticalAlign":"middle"}), "PENGATURAN"], className="sidebar-title", style={"marginTop":"0"}),
             
             html.Div([
-                html.Label("Pilih Saham", className="control-label"),
+                html.Label([DashIconify(icon="lucide:bar-chart-2", width=14, style={"marginRight":"4px", "verticalAlign":"middle"}), "Pilih Saham"], className="control-label"),
                 dcc.Dropdown(
                     id="stock-dropdown",
                     options=[
@@ -379,9 +395,17 @@ app.layout = html.Div([
                         {"label": "TLKM - Telkom Indonesia Tbk", "value": "TLKM.JK"},
                         {"label": "ASII - Astra International Tbk", "value": "ASII.JK"},
                         {"label": "UNVR - Unilever Indonesia Tbk", "value": "UNVR.JK"},
-                        {"label": "GOTO - GoTo Gojek Tokopedia Tbk", "value": "GOTO.JK"},
-                        {"label": "ADRO - Adaro Energy Indonesia Tbk", "value": "ADRO.JK"},
-                        {"label": "PGAS - Perusahaan Gas Negara Tbk", "value": "PGAS.JK"},
+                        {"label": "GOTO - GoTo Gojek Tokopedia", "value": "GOTO.JK"},
+                        {"label": "ADRO - Adaro Energy Indonesia", "value": "ADRO.JK"},
+                        {"label": "PGAS - Perusahaan Gas Negara", "value": "PGAS.JK"},
+                        {"label": "ICBP - Indofood CBP", "value": "ICBP.JK"},
+                        {"label": "INDF - Indofood Sukses Makmur", "value": "INDF.JK"},
+                        {"label": "BRIS - Bank Syariah Indonesia", "value": "BRIS.JK"},
+                        {"label": "ARTO - Bank Jago Tbk", "value": "ARTO.JK"},
+                        {"label": "KLBF - Kalbe Farma Tbk", "value": "KLBF.JK"},
+                        {"label": "MDKA - Merdeka Copper Gold", "value": "MDKA.JK"},
+                        {"label": "UNTR - United Tractors Tbk", "value": "UNTR.JK"},
+                        {"label": "CPIN - Charoen Pokphand", "value": "CPIN.JK"},
                         {"label": "Kustom Ticker (Ketik Manual)", "value": "CUSTOM"}
                     ],
                     value="BBCA.JK",
@@ -391,17 +415,17 @@ app.layout = html.Div([
             ], id="stock-selector-container", className="control-group"),
             
             html.Div([
-                html.Label("Ticker Saham", className="control-label"),
+                html.Label([DashIconify(icon="lucide:hash", width=14, style={"marginRight":"4px", "verticalAlign":"middle"}), "Ticker Saham"], className="control-label"),
                 dcc.Input(id="custom-ticker-input", type="text", value="AAPL",
                           className="custom-input")
             ], id="custom-ticker-manual-container", className="control-group"),
             
             html.Div([
-                html.Label("Unggah File CSV", className="control-label"),
+                html.Label([DashIconify(icon="lucide:upload", width=14, style={"marginRight":"4px", "verticalAlign":"middle"}), "Unggah File CSV"], className="control-label"),
                 dcc.Upload(id="upload-csv", children=html.Div(["Klik untuk Unggah"]),
                            className="upload-container", multiple=False),
                 html.Div(id="upload-filename-status",
-                         style={"fontSize":"10px","color":"#0066cc","marginTop":"2px"})
+                         style={"fontSize":"10px","color":"#3b82f6","marginTop":"4px"})
             ], id="upload-csv-container", className="control-group"),
             
             dcc.Dropdown(id="source-type",
@@ -414,15 +438,14 @@ app.layout = html.Div([
                 style={"display":"none"}),
             
             html.Div([
-                html.Label("Tanggal Mulai", className="control-label"),
-                dcc.Input(id="date-start", type="text", value="2022-01-01",
-                          className="custom-input")
-            ], className="control-group"),
-            
-            html.Div([
-                html.Label("Tanggal Akhir", className="control-label"),
-                dcc.Input(id="date-end", type="text", value="2024-06-01",
-                          className="custom-input")
+                html.Label([DashIconify(icon="lucide:calendar", width=14, style={"marginRight":"4px", "verticalAlign":"middle"}), "Periode Analisis"], className="control-label"),
+                dcc.DatePickerRange(
+                    id='date-picker-range',
+                    start_date='2022-01-01',
+                    end_date='2024-06-01',
+                    display_format='YYYY-MM-DD',
+                    className="custom-datepicker"
+                )
             ], className="control-group"),
             
             html.Div([
@@ -430,19 +453,18 @@ app.layout = html.Div([
                 dcc.Slider(id="vol-factor-slider", min=1.0, max=3.0, step=0.1, value=1.5, marks={}),
                 dcc.Slider(id="forward-window-slider", min=3, max=10, step=1, value=5, marks={}),
                 dcc.Slider(id="tp-pct-slider", min=1.0, max=10.0, step=0.5, value=3.0, marks={}),
-                dcc.Slider(id="max-depth-slider", min=3, max=10, step=1, value=5, marks={}),
-                dcc.DatePickerRange(id="date-picker", start_date="2022-01-01", end_date="2024-06-01"),
+                dcc.Slider(id="max-depth-slider", min=3, max=10, step=1, value=5, marks={})
             ], style={"display":"none"}),
             
-            html.Button("Proses", id="btn-proses", className="btn-proses", n_clicks=0),
+            html.Button([DashIconify(icon="lucide:play", width=14, style={"marginRight":"6px", "verticalAlign":"middle"}), "Proses"], id="btn-proses", className="btn-proses", n_clicks=0),
             
-            html.Div("INFORMASI SAHAM", className="sidebar-title"),
+            html.Div([DashIconify(icon="lucide:info", width=14, style={"marginRight":"6px", "verticalAlign":"middle"}), "INFORMASI SAHAM"], className="sidebar-title"),
             html.Div(id="sidebar-stock-info"),
             
-            html.Div("HASIL DETEKSI", className="sidebar-title"),
+            html.Div([DashIconify(icon="lucide:activity", width=14, style={"marginRight":"6px", "verticalAlign":"middle"}), "HASIL DETEKSI"], className="sidebar-title"),
             html.Div(id="sidebar-detection-results"),
             
-            html.Div("KETERANGAN", className="sidebar-title"),
+            html.Div([DashIconify(icon="lucide:list", width=14, style={"marginRight":"6px", "verticalAlign":"middle"}), "KETERANGAN"], className="sidebar-title"),
             html.Div([
                 html.Div([html.Span("\u2014", style={"color":"#1e293b","fontWeight":"bold","marginRight":"6px"}), html.Span("Harga Close")], className="legend-item"),
                 html.Div([html.Span("\u2014", style={"color":"#f59e0b","fontWeight":"bold","marginRight":"6px"}), html.Span("Resistensi")], className="legend-item"),
@@ -460,8 +482,8 @@ app.layout = html.Div([
             html.Div([
                 html.Div(id="footer-status-text", className="footer-status"),
                 html.Div([
-                    html.Button("Simpan Hasil", id="btn-download-csv", className="btn-simpan", disabled=True),
-                    html.Button("Keluar", id="btn-keluar", className="btn-keluar"),
+                    html.Button([DashIconify(icon="lucide:download", width=14, style={"marginRight":"6px", "verticalAlign":"middle"}), "Simpan Hasil"], id="btn-download-csv", className="btn-simpan", disabled=True),
+                    html.Button([DashIconify(icon="lucide:log-out", width=14, style={"marginRight":"6px", "verticalAlign":"middle"}), "Keluar"], id="btn-keluar", className="btn-keluar"),
                     html.Button("", id="btn-download-excel", style={"display":"none"}),
                     html.Button("", id="btn-download-pdf", style={"display":"none"}),
                 ], className="footer-actions"),
@@ -514,8 +536,8 @@ def update_upload_filename(filename):
      State('custom-ticker-input', 'value'),
      State('upload-csv', 'contents'),
      State('upload-csv', 'filename'),
-     State('date-start', 'value'),
-     State('date-end', 'value'),
+     State('date-picker-range', 'start_date'),
+     State('date-picker-range', 'end_date'),
      State('window-slider', 'value'),
      State('vol-factor-slider', 'value'),
      State('forward-window-slider', 'value'),
@@ -573,7 +595,7 @@ def run_model(n_clicks, source_type, stock_dropdown, custom_ticker, upload_conte
         stock_sector = "Statistik / Kustom"
         ticker_code = "CSV_UPLOAD"
         if upload_contents is not None:
-            df = parse_contents(upload_contents, stock_name)
+            df = parse_contents(upload_contents, stock_name, custom_ticker)
             if df is None:
                 error_msg = "Format file CSV tidak valid. Harus mengandung kolom: Date/index, Open, High, Low, Close, Volume."
         else:
@@ -905,13 +927,13 @@ def render_dashboard(data):
         html.Div([
             # Daftar Sinyal
             html.Div([
-                html.Div("DAFTAR SINYAL", className="card-title"),
+                html.Div([DashIconify(icon="lucide:table", width=16, style={"marginRight":"8px", "verticalAlign":"middle"}), "DAFTAR SINYAL"], className="card-title"),
                 html.Div(signal_table, className="data-table-container")
             ], className="card", style={"padding":"16px 0 0 0", "overflow":"hidden"}),
             
             # Evaluasi Akurasi
             html.Div([
-                html.Div("EVALUASI AKURASI", className="card-title"),
+                html.Div([DashIconify(icon="lucide:pie-chart", width=16, style={"marginRight":"8px", "verticalAlign":"middle"}), "EVALUASI AKURASI"], className="card-title"),
                 html.Div([
                     eval_table,
                     dcc.Graph(figure=fig_pie, config={'displayModeBar': False})
@@ -1023,8 +1045,8 @@ def download_pdf(n_clicks, data):
      Output('stock-dropdown', 'value'),
      Output('custom-ticker-input', 'value'),
      Output('upload-csv', 'contents'),
-     Output('date-picker', 'start_date'),
-     Output('date-picker', 'end_date')],
+     Output('date-picker-range', 'start_date'),
+     Output('date-picker-range', 'end_date')],
     [Input('btn-keluar', 'n_clicks')],
     prevent_initial_call=True
 )

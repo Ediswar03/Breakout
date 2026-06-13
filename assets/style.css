@@ -88,6 +88,8 @@ body {
     border-bottom: 1px solid #f1f5f9;
     text-transform: uppercase;
     letter-spacing: 0.8px;
+    display: flex;
+    align-items: center;
 }
 
 .control-group {
@@ -102,6 +104,8 @@ body {
     font-weight: 500;
     color: var(--text-secondary);
     margin-bottom: 2px;
+    display: flex;
+    align-items: center;
 }
 
 /* Dropdown styling */
@@ -187,6 +191,46 @@ body {
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
 }
 
+/* Date Picker Range */
+.custom-datepicker {
+    width: 100% !important;
+    display: block !important;
+}
+.custom-datepicker .DateRangePickerInput {
+    background-color: transparent !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+}
+.custom-datepicker .DateInput {
+    background-color: transparent !important;
+    width: 45% !important;
+}
+.custom-datepicker .DateInput_input {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 11px !important;
+    color: var(--text-primary) !important;
+    background-color: var(--bg-card) !important;
+    border-bottom: none !important;
+    text-align: center !important;
+    padding: 6px 4px !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease !important;
+    width: 100% !important;
+}
+.custom-datepicker .DateInput_input:focus {
+    border-color: var(--border-color-focus) !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
+}
+.custom-datepicker .DateRangePickerInput_arrow {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 10% !important;
+}
+
 /* Button Proses */
 .btn-proses {
     background: linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-blue) 100%) !important;
@@ -203,6 +247,9 @@ body {
     box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2) !important;
     transition: all 0.2s ease !important;
     letter-spacing: 0.3px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 .btn-proses:hover {
     transform: translateY(-1px) !important;
@@ -289,6 +336,8 @@ body {
     margin-bottom: 12px;
     padding-bottom: 8px;
     border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
 }
 
 .dashboard-grid {
@@ -408,6 +457,9 @@ body {
     font-weight: 500 !important;
     cursor: pointer !important;
     transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 .btn-simpan:hover:not(:disabled), .btn-keluar:hover {
     background-color: #f1f5f9 !important;
