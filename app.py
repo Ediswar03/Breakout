@@ -720,7 +720,7 @@ def run_model(n_clicks, source_type, stock_dropdown, custom_ticker, upload_conte
     
     return {
         "error_msg": None,
-        "df_json": df.reset_index().to_json(date_format='iso'),
+        "df_json": predictor.df.reset_index().to_json(date_format='iso'),
         "candidate_df_json": predictor.candidate_df.reset_index().to_json(date_format='iso'),
         "test_results_json": test_results.reset_index().to_json(date_format='iso') if test_results is not None else None,
         "metrics": metrics_serialized,
@@ -846,7 +846,7 @@ def render_tab_content(active_tab, data):
             
         feat_imp_dict = data['feat_imp']
         feat_imp_df = pd.DataFrame(list(feat_imp_dict.items()), columns=['Fitur', 'Skor Bobot']).sort_values(by='Skor Bobot', ascending=True)
-        fig_imp = px.bar(feat_imp_df, x='Skor Bobot', y='Fitur', orientation='h', color_discrete_sequence=['#38bdf8'])
+        fig_imp = px.bar(feat_imp_df, x='Skor Bobot', y='Fitur', orientation='h', color_discrete_sequence=['#0284c7'])
         fig_imp.update_layout(
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
@@ -957,7 +957,7 @@ def render_tab_content(active_tab, data):
                             vertical_spacing=0.08, row_heights=[0.75, 0.25])
         
         fig.add_trace(go.Scatter(x=df.index, y=df['Close'], 
-                                 name='Harga Close', line=dict(color='#38bdf8', width=2)), row=1, col=1)
+                                 name='Harga Close', line=dict(color='#0284c7', width=2)), row=1, col=1)
         fig.add_trace(go.Scatter(x=df.index, y=df['Resistance'], 
                                  name='Resistensi', line=dict(color='#fb923c', dash='dash', width=1.5)), row=1, col=1)
         
@@ -973,7 +973,7 @@ def render_tab_content(active_tab, data):
                                      name='False Breakout (Trap)'), row=1, col=1)
         
         fig.add_trace(go.Bar(x=df.index, y=df['Volume'], 
-                             name='Volume', marker=dict(color='#475569', opacity=0.8)), row=2, col=1)
+                             name='Volume', marker=dict(color='#94a3b8', opacity=0.8)), row=2, col=1)
         
         fig.update_xaxes(
             rangeselector=dict(
@@ -985,9 +985,9 @@ def render_tab_content(active_tab, data):
                     dict(count=1, label="1Y", step="year", stepmode="backward"),
                     dict(step="all", label="All")
                 ]),
-                bgcolor='#1e293b',
-                activecolor='#38bdf8',
-                font=dict(color='#f8fafc', size=11)
+                bgcolor='#f1f5f9',
+                activecolor='#cbd5e1',
+                font=dict(color='#0f172a', size=11)
             ),
             gridcolor='var(--border-color)',
             row=1, col=1
