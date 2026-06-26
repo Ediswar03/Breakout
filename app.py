@@ -798,9 +798,13 @@ def main():
         else:
             show_df['Prediksi ML'] = 'Belum Diprediksi'
         show_df['Harga'] = [f"Rp {x:,.2f}" for x in predictor.candidate_df['Close'].values]
+        # Tambahkan nilai Feature Engineering: RSI dan SMA Ratio
+        show_df['RSI'] = [f"{x:.1f}" for x in predictor.candidate_df['RSI'].values]
+        show_df['Jarak thdp MA20'] = [f"{(x - 1) * 100:+.1f}%" for x in predictor.candidate_df['SMA_20_Ratio'].values]
+        
         # Tambahkan Keterangan detail
         show_df['Keterangan'] = [
-            f"Close {row['Close']:,.2f} > Resistance {row['Resistance']:,.2f} & Vol {row['Vol_Ratio']:.2f}x"
+            f"Breakout & Vol {row['Vol_Ratio']:.1f}x"
             for _, row in predictor.candidate_df.iterrows()
         ]
         
@@ -877,12 +881,14 @@ def main():
                         "Tipe Data": st.column_config.TextColumn("Tipe Data", width="small"),
                         "Sinyal Aktual": st.column_config.TextColumn("Sinyal Aktual", width="medium"),
                         "Prediksi ML": st.column_config.TextColumn("Prediksi ML", width="medium"),
-                        "Harga": st.column_config.TextColumn("Harga", width="medium"),
-                        "Keterangan": st.column_config.TextColumn("Keterangan", width="large")
+                        "Harga": st.column_config.TextColumn("Harga", width="small"),
+                        "RSI": st.column_config.TextColumn("RSI", width="small"),
+                        "Jarak thdp MA20": st.column_config.TextColumn("Jarak MA20", width="small"),
+                        "Keterangan": st.column_config.TextColumn("Info", width="medium")
                     },
                     hide_index=True,
                     use_container_width=True,
-                    height=280
+                    height=400
                 )
             else:
                 st.info("Tidak ada sinyal breakout yang terdeteksi.")
@@ -1064,11 +1070,9 @@ def main():
                 st.button("🖨️ PDF", disabled=True, use_container_width=True)
 
         with c4:
-            st.markdown("<div class='btn-keluar'>", unsafe_allow_html=True)
-            if st.button("🚪 Keluar", use_container_width=True, key="btn_keluar"):
+            if st.button("🚪 Keluar", use_container_width=True, type="primary", key="btn_keluar"):
                 st.session_state.clear()
                 st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
 
 
 if __name__ == '__main__':
